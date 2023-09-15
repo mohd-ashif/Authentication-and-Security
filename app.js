@@ -1,4 +1,5 @@
 
+require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
@@ -7,6 +8,7 @@ const encrypt = require ("mongoose-encryption");
 
 const app = express();
 
+console.log(process.env.API_KEY);
 app.use(express.static("public"));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({
@@ -20,8 +22,7 @@ const userSchema = new mongoose.Schema({
     password: String
 })
 
-const secret = "thisisourlittilesecret.";
-userSchema.plugin(encrypt, { secret: secret , encryptedFields: ["password"] });
+userSchema.plugin(encrypt, { secret: process.env.SECRET, encryptedFields: ["password"] });
 
 const User = new mongoose.model("User", userSchema);
 
@@ -51,7 +52,7 @@ app.post("/register", async function (req, res) { // Use async function here
   }
 });
 
-app.post("/login", async function (req, res) { // Use async function here
+app.post("/login", async function (req, res) { 
   const username = req.body.username;
   const password = req.body.password;
 
