@@ -4,12 +4,12 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-const md5 = require ("md5")
+const md5 = require ("md5");
 
 
 const app = express();
 
-console.log(md5(123456));
+ 
 app.use(express.static("public"));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({
@@ -37,38 +37,41 @@ app.get("/register", function (req, res) {
   res.render("register");
 });
 
-app.post("/register", async function (req, res) { // Use async function here
-  const newUser = new User({
-    email: req.body.username,
-    password: md5(req.body.password)
+app.post("/register", async function (req, res) { 
+
+  bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
+
+    const newUser = new User({
+      email: req.body.username,
+      password:hash
+    });
+  
+    try {
+       newUser.save();
+      res.render("secrets");
+    } catch (err) {
+      console.log(err);
+    }
   });
 
-  try {
-    await newUser.save();
-    res.render("secrets");
-  } catch (err) {
-    console.log(err);
-  }
 });
 
 app.post("/login", async function (req, res) { 
   const username = req.body.username;
-  const password = md5(req.body.password);
-
+  const password = req.body.password;
   try {
     const foundUser = await User.findOne({ email: username });
-    if (foundUser.password === password) {
-      res.render("secrets");
-    } else {
+    bcrypt.compare(password, foundUser.password , function(err, result) {
+      if(result  === true){
+        res.render("secrets");
+      }
+  });git 
       
-      res.render("login");
-    }
+   
   } catch (err) {
     console.log(err);
   }
 });
-
-
 
 
 app.listen(3000, function(){
