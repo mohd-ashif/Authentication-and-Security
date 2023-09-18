@@ -1,29 +1,21 @@
-
 require('dotenv').config();
 const express = require("express");
-const bodyParser = require("body-parser");
 const ejs = require("ejs");
-const mongoose = require("mongoose");
-const md5 = require ("md5");
-
+const bcrypt = require('bcryptjs');
+const User = require('./models/userModel.js')
+const dbConnect = require('./config/db.js');
 
 const app = express();
 
- 
-app.use(express.static("public"));
-app.set('view engine', 'ejs');
-app.use(bodyParser.urlencoded({
+app.use(express.json());
+app.use(express.urlencoded({
   extended: true
 }));
 
-mongoose.connect('mongodb://127.0.0.1:27017/myapp');
+app.use(express.static("public"));
+app.set('view engine', 'ejs');
 
-const userSchema = new mongoose.Schema({
-    email: String,
-    password: String
-})
-
-const User = new mongoose.model("User", userSchema);
+dbConnect();
 
 app.get("/", function (req, res) {
   res.render("home");
@@ -37,46 +29,48 @@ app.get("/register", function (req, res) {
   res.render("register");
 });
 
-app.post("/register", async function (req, res) { 
+app.post("/register", async (req, res) => { 
 
-  bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
+  const { username, email, password } = req.body;
 
-    const newUser = new User({
-      email: req.body.username,
-      password:hash
-    });
+  const hashedPassword = await bcrypt.hashSync(password, 10);
   
     try {
-       newUser.save();
+
+    const newUser = await User.create({
+      username: username,
+      email: email,
+      password: hashedPassword
+    });
+
+      await newUser.save();
+
       res.render("secrets");
+
     } catch (err) {
       console.log(err);
     }
-  });
 
 });
 
 app.post("/login", async function (req, res) { 
-  const username = req.body.username;
-  const password = req.body.password;
+  const { email, password } = req.body;
+
   try {
-    const foundUser = await User.findOne({ email: username });
-    bcrypt.compare(password, foundUser.password , function(err, result) {
-      if(result  === true){
-        res.render("secrets");
-      }
-  });git 
-      
-   
-  } catch (err) {
-    console.log(err);
+    const foundUser = await User.findOne({ email: email });
+
+    await bcrypt.compareSync(password, foundUser.password);
+
+    res.render("secrets");
+
+  } catch (error) {
+    console.log('error',error);
   }
 });
 
 
-app.listen(3000, function(){
-    console.log('server started on port 3000');
-
+app.listen(process.env.PORT, function(){
+    console.log(`server started on port: ${process.env.PORT}`);
 })
 
 
