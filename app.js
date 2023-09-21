@@ -4,6 +4,7 @@ const ejs = require("ejs");
 const bcrypt = require('bcryptjs');
 const User = require('./models/userModel.js')
 const dbConnect = require('./config/db.js');
+ GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 const app = express();
 
@@ -28,6 +29,30 @@ app.get("/login", function (req, res) {
 app.get("/register", function (req, res) {
   res.render("register");
 });
+
+
+
+app.get("/secrets",   async (req, res) => {
+  try {
+    if (req.isAuthentication()) {
+      res.render("secrets");
+    } else {
+      res.redirect("/login");
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).send("Something went wrong");
+  }
+});
+
+app.get("/submit", function (req, res) {
+  res.redirect("/");
+ });
+
+app.get("/logout", function (req, res) {
+  res.redirect("/");
+ });
+
 
 app.post("/register", async (req, res) => { 
 
